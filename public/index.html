@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wordly Game</title>
+  <style>
+    /* Добавьте стили для интерфейса игры */
+  </style>
+</head>
+<body>
+  <div id="lobby">
+    <button id="createRoom">Create Room</button>
+    <input type="text" id="roomIdInput" placeholder="Enter Room ID" />
+    <button id="joinRoom">Join Room</button>
+  </div>
+  <div id="game" style="display: none;">
+    <div id="wordSubmission">
+      <input type="text" id="secretWord" maxlength="5" placeholder="Enter your word" />
+      <button id="submitWord">Submit Word</button>
+    </div>
+    <div id="guessSection" style="display: none;">
+      <input type="text" id="guessInput" maxlength="5" placeholder="Enter your guess" />
+      <button id="submitGuess">Submit Guess</button>
+    </div>
+    <div id="gameStatus"></div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>

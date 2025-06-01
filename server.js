@@ -38,25 +38,37 @@ io.on('connection', (socket) => {
   });
 
   socket.on('submitWord', ({ roomId, word }) => {
-    const room = rooms[roomId];
-    if (room) {
-      room.words[socket.id] = word.toLowerCase();
-      if (Object.keys(room.words).length === 2) {
-        io.to(roomId).emit('startGame');
-      }
-    }
-  });
+	  const room = rooms[roomId];
+	  if (room) {
+		room.words[socket.id] = word.toLowerCase();
+		// Отправляем обновленные слова всем игрокам
+		io.to(roomId).emit('updateWords', room.words);
+		
+		if (Object.keys(room.words).length === 2) {
+		  io.to(roomId).emit('startGame');
+		}
+	  }
+	});
 
   socket.on('makeGuess', ({ roomId, guess }) => {
 	  const room = rooms[roomId];
 	  if (room && !room.gameOver) {
 		const opponentId = room.players.find((id) => id !== socket.id);
-		room.guesses.push({ player: socket.id, guess: guess.toLowerCase(), result: null });
+		const opponentWord = room.words[opponentId];
+		const guessedWord = guess.toLowerCase();
+		
+		// Проверяем, угадал ли игрок слово
+		if (guessedWord === opponentWord) {
+		  room.gameOver = true;
+		  io.to(roomId).emit('gameOver', {
+			winner: socket.id,
+			words: room.words
+		  });
+		  return;
+		}
 		
 		// Отправляем догадку оппоненту для оценки
-		socket.to(opponentId).emit('opponentGuess', guess.toLowerCase());
-		
-		// Уведомляем игрока, что его догадка отправлена на оценку
+		socket.to(opponentId).emit('opponentGuess', guessedWord);
 		socket.emit('guessSent');
 	  }
 	});

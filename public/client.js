@@ -17,6 +17,10 @@ const opponentGuess = document.getElementById('opponentGuess');
 const submitEvaluationBtn = document.getElementById('submitEvaluation');
 const guessHistory = document.getElementById('guessHistory');
 
+const myWordDisplay = document.getElementById('myWord');
+const opponentWordDisplay = document.getElementById('opponentWord');
+const gameInfo = document.getElementById('gameInfo');
+
 let roomId = null;
 let playerId = null;
 let currentEvaluation = [];
@@ -38,6 +42,8 @@ submitWordBtn.addEventListener('click', () => {
   if (word.length === 5) {
     socket.emit('submitWord', { roomId, word });
     document.getElementById('wordSubmission').style.display = 'none';
+    myWordDisplay.textContent = word;
+    gameInfo.classList.remove('hidden');
     gameStatus.textContent = 'Waiting for opponent...';
   }
 });
@@ -145,13 +151,42 @@ socket.on('guessEvaluated', ({ guess, evaluation }) => {
 
 socket.on('gameOver', ({ winner, words }) => {
   const winnerText = winner === playerId ? 'You won!' : 'You lost.';
-  gameStatus.textContent = `${winnerText} Your word: ${words[playerId]}, Opponent's word: ${words[Object.keys(words).find(id => id !== playerId)]}`;
+  gameStatus.textContent = `${winnerText}`;
   guessSection.classList.add('hidden');
   evaluationSection.classList.add('hidden');
+  
+  // Показываем слова
+  myWordDisplay.textContent = words[playerId];
+  const opponentId = Object.keys(words).find(id => id !== playerId);
+  opponentWordDisplay.textContent = words[opponentId];
 });
 
 socket.on('playerDisconnected', () => {
   gameStatus.textContent = 'Opponent disconnected. Game over.';
   guessSection.classList.add('hidden');
   evaluationSection.classList.add('hidden');
+});
+
+socket.on('guessMade', ({ player, guess, result }) => {
+  const guessElement = document.createElement('div');
+  guessElement.className = 'guess-row';
+  
+  guess.split('').forEach((letter, index) => {
+    const letterElement = document.createElement('div');
+    letterElement.className = `letter ${result[index] || ''}`;
+    letterElement.textContent = letter;
+    guessElement.appendChild(letterElement);
+  });
+  
+  guessHistory.appendChild(guessElement);
+});
+
+socket.on('updateWords', (words) => {
+  if (words[playerId]) {
+    myWordDisplay.textContent = words[playerId];
+  }
+  const opponentId = Object.keys(words).find(id => id !== playerId);
+  if (opponentId && words[opponentId]) {
+    opponentWordDisplay.textContent = words[opponentId];
+  }
 });

@@ -118,6 +118,38 @@ function evaluateGuess(guess, target) {
   return result;
 }
 
+// Добавим новое событие в io.on('connection')
+socket.on('submitEvaluation', ({ roomId, evaluation }) => {
+  const room = rooms[roomId];
+  if (room && !room.gameOver) {
+    const lastGuess = room.guesses[room.guesses.length - 1];
+    lastGuess.result = evaluation;
+    
+    io.to(roomId).emit('guessEvaluated', {
+      guess: lastGuess.guess,
+      evaluation: evaluation
+    });
+    
+    room.currentTurn = (room.currentTurn + 1) % 2;
+    io.to(roomId).emit('nextTurn', room.players[room.currentTurn]);
+  }
+});
+
+// Изменим обработчик makeGuess
+socket.on('makeGuess', ({ roomId, guess }) => {
+  const room = rooms[roomId];
+  if (room && !room.gameOver) {
+    const opponentId = room.players.find((id) => id !== socket.id);
+    room.guesses.push({ player: socket.id, guess: guess.toLowerCase(), result: null });
+    
+    // Отправляем догадку оппоненту для оценки
+    socket.to(opponentId).emit('opponentGuess', guess.toLowerCase());
+    
+    // Уведомляем игрока, что его догадка отправлена на оценку
+    socket.emit('guessSent');
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
